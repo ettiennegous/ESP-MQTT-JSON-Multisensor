@@ -72,8 +72,8 @@ const int bluePin = D3;
 #define DHTPIN    D7
 #define DHTTYPE   DHT22
 #define LDRPIN    A0
-
-
+#define TRIGGER 2
+#define ECHO    15
 
 /**************************** SENSOR DEFINITIONS *******************************************/
 float ldrValue;
@@ -83,7 +83,9 @@ float diffLDR = 25;
 
 float diffTEMP = 0.2;
 float tempValue;
-
+long distanceValue = 0.0;
+long durationValue = 0.0;
+    
 float diffHUM = 1;
 float humValue;
 
@@ -145,6 +147,13 @@ void setup() {
   pinMode(PIRPIN, INPUT);
   pinMode(DHTPIN, INPUT);
   pinMode(LDRPIN, INPUT);
+
+  pinMode(TRIGGER, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  
+  pinMode(TRIGGER, OUTPUT);
+  pinMode(ECHO, INPUT);
 
   Serial.begin(115200);
   delay(10);
@@ -350,6 +359,7 @@ void sendState() {
   root["humidity"] = (String)humValue;
   root["motion"] = (String)motionStatus;
   root["ldr"] = (String)LDR;
+  root["distance"] = (String)distanceValue;
   root["temperature"] = (String)tempValue;
   root["heatIndex"] = (String)calculateHeatIndex(humValue, tempValue);
 
@@ -448,6 +458,23 @@ void loop() {
 
     float newTempValue = dht.readTemperature(true); //to use celsius remove the true text inside the parentheses  
     float newHumValue = dht.readHumidity();
+
+    digitalWrite(TRIGGER, LOW);  
+    delayMicroseconds(2); 
+    
+    digitalWrite(TRIGGER, HIGH);
+    delayMicroseconds(10); 
+    
+    digitalWrite(TRIGGER, LOW);
+    durationValue = pulseIn(ECHO, HIGH);
+    long newDistanceValue = (durationValue/2) / 29.1;
+
+    if(newDistanceValue != distanceValue) {
+      distanceValue = newDistanceValue;
+      sendState();
+    }
+    
+
 
     //PIR CODE
     pirValue = digitalRead(PIRPIN); //read state of the
